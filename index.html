@@ -340,6 +340,12 @@ input[type=range]::-moz-range-thumb{width:2.25rem;height:2.25rem;border-radius:5
 .bg-deco .wm{position:absolute;inset:0;display:grid;place-items:center}
 .bg-deco .wm span{font:italic 900 clamp(2.5rem,15vw,5rem)/1 var(--serif);letter-spacing:.05em;color:var(--gold);opacity:.08;transform:rotate(-12deg);white-space:nowrap}
 
+.colgrid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.75rem 0}
+.colbtn{min-height:3.5rem;border-radius:var(--r-m);border:3px solid transparent;color:#fff;font-weight:800;font-size:1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem;cursor:pointer;opacity:.7;font-family:inherit}
+.colbtn small{font-weight:600;opacity:.92;font-size:.78rem}
+.colbtn.sel{opacity:1;border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
+.gamerows{margin:.75rem 0 0}
+.okmsg{color:var(--gold);text-align:center;font-weight:700;min-height:1.25rem}
 </style>
 </head>
 <body>
@@ -404,7 +410,10 @@ var ICONS = {
 'use strict';
 (function () {
   var KEY = 'casino-night-v1';
-  var START = 100000, LIMIT = -150000;
+  var START = 150000, LIMIT = -150000;
+  var SERVER_URL = 'INCOLLA_QUI_URL_APPS_SCRIPT';   // l'indirizzo che finisce con /exec
+  var SERVER_KEY = 'INCOLLA_QUI_PLAYER_KEY';
+  var SYNC_MS = 6000;
   var REASONS = ['Mercato Azionario', 'Corsa dei cavalli', 'Flip7', 'Perudo', 'Roulette', 'Scommessa Privata', 'Bingo'];
   var REASON_ICON = { 'Mercato Azionario': 'market', 'Corsa dei cavalli': 'horseshoe', 'Flip7': 'card7', 'Perudo': 'dice', 'Roulette': 'roulette', 'Scommessa Privata': 'versus', 'Bingo': 'bingo' };
   var ID_RE = /^[a-z0-9]{6,24}$/;
@@ -530,7 +539,8 @@ var ICONS = {
   }
   function normalize(d) {
     return {
-      v: 1, name: d.name.slice(0, 20), balance: d.balance, locked: !!d.locked || d.balance <= LIMIT,
+      v: 1, name: d.name.slice(0, 20), code: typeof d.code === 'string' ? d.code : '', since: typeof d.since === 'number' ? d.since : 0,
+      outbox: Array.isArray(d.outbox) ? d.outbox : [], srvTs: typeof d.srvTs === 'number' ? d.srvTs : 0, lastGame: typeof d.lastGame === 'string' ? d.lastGame : '', balance: d.balance, locked: !!d.locked || d.balance <= LIMIT,
       history: d.history.filter(function (e) { return e && typeof e === 'object' && typeof e.ts === 'number'; }),
       bets: d.bets
     };
@@ -547,6 +557,76 @@ var ICONS = {
     catch (e) { toast('Attenzione: salvataggio non riuscito!', 'info'); }
   }
   function checkLock() { if (S.balance <= LIMIT) S.locked = true; }
+
+  /* ---------- collegamento al registro centrale (Google Sheet) ---------- */
+  var syncing = false, online = null;
+  var GAME_LABEL = { PARTY: 'Roulette', CERCHI: 'Roulette', CORSA: 'Corsa dei cavalli', NEXUS: 'Mercato Azionario' };
+  var CAUSALE_LABEL = { PUNTATA: 'Puntata', VINCITA: 'Vincita', ESITO: 'Esito', RIMBORSO: 'Rimborso', AVVIO: 'Credito iniziale', RICARICA: 'Ricarica', RESET: 'Conto azzerato' };
+  function srv(body) {
+    body.key = SERVER_KEY;
+    return fetch(SERVER_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); });
+  }
+  function pendingSum() { return S.outbox.reduce(function (t, m) { return t + m.amount; }, 0); }
+  function genCode() {
+    var al = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', out = '', a = new Uint8Array(5), i;
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+    else for (i = 0; i < 5; i++) a[i] = Math.floor(Math.random() * 256);
+    for (i = 0; i < 5; i++) out += al.charAt(a[i] % al.length);
+    return out;
+  }
+  /* Invia le mosse in coda, una alla volta. Se la rete cade si ferma (errore) e riprova al giro dopo. */
+  function flushOutbox() {
+    if (!S.outbox.length) return Promise.resolve();
+    var m = S.outbox[0];
+    return srv({ action: 'move', player: S.code, id: m.id, amount: m.amount, causale: m.causale, game: m.game, note: m.note })
+      .then(function () { S.outbox.shift(); save(); return flushOutbox(); });
+  }
+  function mergeServer(r) {
+    var ids = {};
+    S.history.forEach(function (e) {
+      if (e.id) ids[e.id] = true;
+      if (e.betId) ids['B-' + e.betId + '-' + S.code] = true;
+    });
+    r.moves.forEach(function (m) {
+      if (m.ts > (S.srvTs || 0)) S.srvTs = m.ts;
+      if (m.ts <= S.since || ids[m.id]) return;
+      var game = GAME_LABEL[m.gioco] || m.gioco;
+      var reason = REASON_ICON[game] ? game : 'Banca';
+      S.history.push({ kind: 'move', id: m.id, ts: m.ts, reason: reason,
+        desc: (CAUSALE_LABEL[m.causale] || m.causale) + (m.note && m.causale !== 'AVVIO' ? ' · ' + m.note : ''),
+        amount: m.importo, after: 0 });
+    });
+    S.history.sort(function (a, b) { return a.ts - b.ts; });
+    S.balance = Math.round(r.balance) + pendingSum();
+    var bal = S.balance;
+    for (var i = S.history.length - 1; i >= 0; i--) {
+      var e = S.history[i];
+      if (typeof e.amount !== 'number') continue;
+      e.after = bal; bal -= e.amount;
+    }
+    checkLock();
+  }
+  function syncSig() { return S ? [S.balance, S.history.length, online, S.outbox.length, S.locked].join('|') : ''; }
+  function syncNow() {
+    if (!S || !S.code || syncing) return;
+    var before = syncSig();
+    syncing = true;
+    flushOutbox()
+      .then(function () { return srv({ action: 'history', player: S.code, since: Math.max(0, (S.srvTs || 0) - 600000) }); })
+      .then(function (r) {
+        online = !!(r && r.ok);
+        if (online) { mergeServer(r); save(); }
+      })
+      .catch(function () { online = false; })
+      .then(function () { syncing = false; if (S && syncSig() !== before) render(); });
+  }
+  function statusLine() {
+    var t = 'Giocatore · ' + S.code;
+    if (online === false) t += ' · offline';
+    if (S.outbox.length) t += ' · ' + S.outbox.length + ' da inviare';
+    return t;
+  }
 
   /* ---------- finestre (sheet) ---------- */
   function openSheet(title, backFn) {
@@ -694,9 +774,11 @@ var ICONS = {
   /* ---------- operazioni sul saldo ---------- */
   function applyMovement(delta, reason, desc) {
     if (S.locked) return false;
+    var mid = uid();
     S.balance += delta;
-    S.history.push({ kind: 'move', id: uid(), ts: Date.now(), reason: reason, desc: desc || '', amount: delta, after: S.balance });
-    checkLock(); save(); render();
+    S.history.push({ kind: 'move', id: mid, ts: Date.now(), reason: reason, desc: desc || '', amount: delta, after: S.balance });
+    S.outbox.push({ id: mid, amount: delta, causale: 'MANUALE', game: reason, note: desc || '' });
+    checkLock(); save(); render(); syncNow();
     return true;
   }
   function closeBet(id, outcome) {
@@ -711,7 +793,8 @@ var ICONS = {
       e.ts = bet.closedTs; e.amount = delta; e.after = S.balance;
       S.history.push(e);
     }
-    checkLock(); save(); render();
+    S.outbox.push({ id: 'B-' + id + '-' + S.code, amount: delta, causale: 'SCOMMESSA', game: 'Scommessa Privata', note: bet.desc });
+    checkLock(); save(); render(); syncNow();
     return delta;
   }
 
@@ -867,13 +950,143 @@ var ICONS = {
       btn('Rifiuta', 'btn-plain', closeSheet));
   }
 
+  /* ---------- collegamento ai giochi con QR + puntata alle roulette ---------- */
+  var GAME_NAMES = { PARTY: 'Roulette Party', CERCHI: 'Roulette a cerchi', CORSA: 'Corsa dei cavalli', NEXUS: 'Mercato Azionario' };
+  var COLOR_HEX = { BLU: '#2f6fe0', VERDE: '#1f9d55', ROSSO: '#d1303a', VIOLA: '#8a3fd1', ARANCIONE: '#e8751a', ORO: '#c99a00', GIALLO: '#d4b400' };
+  var MAXBET = 50000, pendingLink = null;
+  function parseGameLink(text) {
+    var m = /[#?&]lk=([A-Za-z]+)\.([A-Za-z0-9]{4,12})/.exec(String(text || ''));
+    if (!m) return null;
+    var g = m[1].toUpperCase();
+    return GAME_NAMES[g] ? { game: g, session: m[2].toUpperCase() } : null;
+  }
+  function menuRow(icon, title, sub, fn) {
+    return h('button', { class: 'menu-row', type: 'button', onclick: fn },
+      h('span', { class: 'lead' }, ico(icon)),
+      h('span', { class: 'mid' }, h('b', { text: title }), h('span', { text: sub })),
+      ico('chev', 'chev'));
+  }
+  function runPendingLink() {
+    if (pendingLink && S && S.code) { var g = pendingLink; pendingLink = null; linkGame(g.game, g.session); }
+  }
+  function linkGame(game, session) {
+    closeSheet();
+    srv({ action: 'link', player: S.code, game: game, session: session })
+      .then(function (r) {
+        if (!r || !r.ok) {
+          resultSheet('Collegamento non riuscito', { tone: 'neg', text: [r && r.error === 'unknown_player' ? 'Il tuo conto non risulta nel registro.' : 'Riprova tra un attimo.'] });
+          return;
+        }
+        buzz(25);
+        if (game === 'PARTY' || game === 'CERCHI') rouletteSheet(game);
+        else resultSheet('Collegato!', { tone: 'pos', icon: 'check', text: ['Sei collegato a ' + GAME_NAMES[game] + '.', 'Torna allo schermo del gioco: compari nell’elenco.'] });
+      })
+      .catch(function () { resultSheet('Nessuna connessione', { tone: 'neg', text: ['Serve internet per collegarsi a un gioco.'] }); });
+  }
+  function gameScanSheet() { scanSheet({ game: true }); }
+
+  function betError(e) {
+    var m = { closed: 'Le puntate sono chiuse.', no_round: 'Nessun giro aperto.', insufficient: 'Saldo insufficiente: supereresti il limite di perdita.',
+      over_limit: 'Puntata troppo alta: massimo ' + fmt(MAXBET) + '.', bad_colour: 'Colore non valido.', bad_amount: 'Importo non valido.', unknown_player: 'Conto non trovato.' };
+    return m[e] || 'Puntata non riuscita. Riprova.';
+  }
+  function rouletteSheet(game) {
+    S.lastGame = game; save();
+    var sh = openSheet(GAME_NAMES[game]);
+    var timer = null, stopped = false, st = null, colour = null, attemptId = null, busy = false, seeded = false, lastSeen = null;
+    var statusEl = h('div', { class: 'bet-card' });
+    var mineEl = h('p', { class: 'muted center' }), resEl = h('p', { class: 'center' });
+    var okEl = h('div', { class: 'okmsg', role: 'status' }), err = h('div', { class: 'err', role: 'alert' });
+    var grid = h('div', { class: 'colgrid' });
+    var amt = numInput({ max: MAXBET, label: 'Importo in euro', onInput: function () { attemptId = null; upd(); } });
+    amt.value = '1000';
+    var chips = h('div', { class: 'chips' }, [1000, 5000, 10000, 25000, 50000].map(function (v) {
+      return h('button', { class: 'chip', type: 'button', text: fmtNum(v), onclick: function () { amt.value = String(v); attemptId = null; upd(); } });
+    }));
+    var go = btn('Punta', 'btn-gold btn-lg', place, 'chip');
+    overlayCleanup = function () { stopped = true; clearTimeout(timer); };
+
+    function describe(L) {
+      if (L.annullato) return 'Giro ' + L.round + ' annullato' + (L.mie ? ': puntate rimborsate.' : '.');
+      var t = 'Giro ' + L.round + ': uscito ' + L.colore + (L.mult ? ' x' + L.mult : '') + '.';
+      if (L.mie) t += L.vincita > 0 ? ' Hai vinto ' + fmt(L.vincita) + '!' : ' Questa volta niente.';
+      return t;
+    }
+    function upd() {
+      var a = amt.val();
+      [].forEach.call(chips.children, function (c) { c.setAttribute('aria-pressed', String(a === parseInt(c.textContent.replace(/\D/g, ''), 10))); });
+      [].forEach.call(grid.children, function (c) { c.classList.toggle('sel', c.getAttribute('data-c') === colour); });
+      go.disabled = !(st && st.open && colour && a && !S.locked && !busy);
+    }
+    function paint() {
+      statusEl.className = 'bet-card';
+      fill(statusEl,
+        h('div', { class: 't', text: st.open ? 'Puntate APERTE' : st.round ? 'Puntate chiuse · la roulette gira' : 'In attesa del banco' }),
+        h('div', { class: 'muted', text: 'Saldo: ' + fmt(S.balance) }));
+      mineEl.textContent = st.mine.length ? 'Le tue puntate: ' + st.mine.map(function (b) { return b.colore + ' ' + fmt(b.importo); }).join(' · ') : '';
+      var L = st.last;
+      resEl.textContent = L ? describe(L) : '';
+      if (!seeded) { seeded = true; lastSeen = L ? L.round : null; }
+      else if (L && L.round !== lastSeen) {
+        lastSeen = L.round; syncNow();
+        if (L.mie) { buzz([30, 40, 30]); okEl.textContent = describe(L); }
+      }
+      if (!grid.children.length && st.colori) {
+        st.colori.forEach(function (c) {
+          grid.append(h('button', { class: 'colbtn', type: 'button', 'data-c': c.id, style: 'background:' + (COLOR_HEX[c.id] || '#555'),
+            onclick: function () { colour = c.id; attemptId = null; upd(); buzz(6); } },
+            h('span', { text: c.nome }), h('small', { text: c.pagamento === 'variabile' ? 'pagamento variabile' : c.pagamento })));
+        });
+      }
+      upd();
+    }
+    function refresh() {
+      if (stopped) return;
+      srv({ action: 'game_status', game: game, player: S.code })
+        .then(function (r) {
+          if (stopped) return;
+          if (r && r.ok) { st = r; paint(); } else err.textContent = 'Registro non raggiungibile.';
+        })
+        .catch(function () { if (!stopped && !st) err.textContent = 'Nessuna connessione…'; })
+        .then(function () { if (!stopped) timer = setTimeout(refresh, 2500); });
+    }
+    function place() {
+      var a = amt.val();
+      if (!st || !st.open || !colour || !a || busy) return;
+      if (!attemptId) attemptId = uid();
+      busy = true; err.textContent = ''; okEl.textContent = ''; upd();
+      srv({ action: 'bet', game: game, round: st.round, player: S.code, colour: colour, amount: a, id: attemptId })
+        .then(function (r) {
+          busy = false;
+          if (r && r.ok) {
+            attemptId = null; buzz(20);
+            S.balance = Math.round(r.balance) + pendingSum(); checkLock(); save(); render();
+            okEl.textContent = 'Puntata registrata: ' + colour + ' ' + fmt(a);
+            clearTimeout(timer); refresh();
+          } else { attemptId = null; err.textContent = betError(r && r.error); }
+        })
+        .catch(function () { busy = false; err.textContent = 'Nessuna connessione: riprova, non verrai addebitato due volte.'; })
+        .then(upd);
+    }
+    add(sh.body,
+      S.locked ? h('p', { class: 'center err', text: 'Conto bloccato: non puoi puntare.' }) : null,
+      statusEl, mineEl, resEl, grid,
+      h('div', { class: 'field' }, h('label', { text: 'Quanto punti (€) · massimo ' + fmtNum(MAXBET) }), amt),
+      chips, okEl, err);
+    add(sh.foot, go);
+    statusEl.append(h('div', { class: 'muted', text: 'Collegamento…' }));
+    refresh();
+    upd();
+  }
+
   /* ---------- scanner ---------- */
-  function scanSheet() {
-    if (S.locked) return;
-    var sh = openSheet('Scansiona QR');
+  function scanSheet(opts) {
+    var forGame = !!(opts && opts.game === true);
+    if (S.locked && !forGame) return;
+    var sh = openSheet(forGame ? 'Collegati a un gioco' : 'Scansiona QR');
     var video = h('video', { playsinline: '', autoplay: true, muted: true });
     video.muted = true;
-    var status = h('p', { class: 'lead-text', text: 'Inquadra il QR dell’altro telefono…' });
+    var status = h('p', { class: 'lead-text', text: forGame ? 'Inquadra il QR sullo schermo del gioco…' : 'Inquadra il QR dell’altro telefono…' });
     var file = h('input', { type: 'file', accept: 'image/*', style: 'display:none' });
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -884,6 +1097,8 @@ var ICONS = {
       if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
     };
     function onText(text) {
+      var gl = parseGameLink(text);
+      if (gl) { linkGame(gl.game, gl.session); return true; }
       var p = parsePayload(text);
       if (!p) { status.textContent = 'QR non riconosciuto: non è di questa app.'; return false; }
       closeSheet();
@@ -1119,7 +1334,7 @@ var ICONS = {
     var sh = openSheet(title);
     add(sh.body, h('div', { class: 'bigresult neg' }, ico(icon)));
     lines.forEach(function (l, i) { add(sh.body, h('p', { class: 'center' + (i ? ' muted' : ''), text: l })); });
-    add(sh.body, h('div', { class: 'bet-card' }, h('div', { class: 'muted', text: 'Attenzione: se lo fai per rimediare a una perdita o ripartire da 100.000 €, è barare!' })));
+    add(sh.body, h('div', { class: 'bet-card' }, h('div', { class: 'muted', text: 'Attenzione: se lo fai per rimediare a una perdita o ripartire da ' + fmt(START) + ', è barare!' })));
     add(sh.foot, btn('Continua', 'btn-danger btn-lg', function () {
       var s2 = openSheet('Ultima conferma');
       add(s2.body, h('div', { class: 'bigresult neg' }, ico(icon)),
@@ -1132,8 +1347,13 @@ var ICONS = {
       'Azzerare il conto?',
       'Il saldo torna a ' + fmt(START) + ', storico e scommesse vengono cancellati e il conto si sblocca. Il nome resta. Non si può annullare.'
     ], 'Azzera tutto', function () {
-      S = { v: 1, name: S.name, balance: START, locked: false, history: [], bets: {} };
-      shown = null; save(); closeSheet(); render(); toast('Conto azzerato', 'reset');
+      var confirmed = S.balance - pendingSum(), delta = START - confirmed, now = Date.now(), rid = uid();
+      S = { v: 1, name: S.name, code: S.code, since: now - 1, outbox: [], balance: START, locked: false, history: [], bets: {} };
+      if (delta !== 0) {
+        S.history.push({ kind: 'move', id: rid, ts: now, reason: 'Banca', desc: 'Conto azzerato', amount: delta, after: START });
+        S.outbox.push({ id: rid, amount: delta, causale: 'RESET', game: 'banca', note: 'Conto azzerato' });
+      }
+      shown = null; save(); closeSheet(); render(); syncNow(); toast('Conto azzerato', 'reset');
     });
   }
   function deleteAccountSheet() {
@@ -1155,6 +1375,7 @@ var ICONS = {
   }
   function menuSheet() {
     var sh = openSheet('Opzioni');
+    add(sh.body, h('div', { class: 'bet-card' }, h('div', { class: 'muted', text: 'Il tuo codice conto' }), h('div', { class: 't', text: S.code }), h('div', { class: 'muted', text: 'Serve per puntare alle roulette e ritrovare il conto su un altro telefono.' })));
     function row(icon, title, sub, fn, id, cls, disabled) {
       return h('button', { id: id, class: 'menu-row ' + (cls || ''), type: 'button', disabled: disabled, onclick: fn },
         h('span', { class: 'lead' }, ico(icon)), h('span', { class: 'mid' }, h('b', { text: title }), h('span', { text: sub })), ico('chev', 'chev'));
@@ -1162,7 +1383,6 @@ var ICONS = {
     add(sh.body,
       h('div', { class: 'menu' },
         row('export', 'Esporta dati', 'Scarica un file JSON con tutto', exportData, 'btn-export'),
-        row('import', 'Importa dati', S.locked ? 'Non disponibile a conto bloccato' : 'Ricarica un file esportato', function () { closeSheet(); $('#file-import').click(); }, 'btn-import', '', S.locked),
         row('reset', 'Reset', 'Ricomincia da zero e sblocca il conto', resetSheet, 'btn-reset', 'danger'),
         row('trash', 'Cancella account', 'Elimina nome e dati da questo telefono', deleteAccountSheet, 'btn-delete', 'danger')));
     if (!standalone()) {
@@ -1173,15 +1393,28 @@ var ICONS = {
 
   /* ---------- schermate ---------- */
   function welcome() {
-    var name = h('input', { class: 'input', type: 'text', maxlength: '20', placeholder: 'Il tuo nome', autocomplete: 'off', 'aria-label': 'Il tuo nome' });
+    var name = h('input', { class: 'input', type: 'text', maxlength: '20', placeholder: 'Il tuo nome', autocomplete: 'off', 'aria-label': 'Il tuo nome', value: S && S.name ? S.name : null });
+    var code = h('input', { class: 'input', type: 'text', maxlength: '8', placeholder: 'Codice conto (solo se ne hai già uno)', autocomplete: 'off', autocapitalize: 'characters', 'aria-label': 'Codice conto' });
     var err = h('div', { class: 'err', role: 'alert' });
+    var busy = false;
+    function fail(t) { err.textContent = t; busy = false; }
     function go() {
-      var n = name.value.trim();
+      if (busy) return;
+      var n = name.value.trim(), c = code.value.trim().toUpperCase();
       if (!n) { err.textContent = 'Scrivi il tuo nome per iniziare.'; name.focus(); return; }
-      S = { v: 1, name: n.slice(0, 20), balance: START, locked: false, history: [], bets: {} };
-      shown = null; save();
-      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
-      render();
+      busy = true; err.textContent = 'Collegamento in corso…';
+      var restore = !!c, use = c || genCode();
+      srv({ action: 'join', player: use, name: n.slice(0, 20), restore: restore })
+        .then(function (r) {
+          if (!r || !r.ok) { fail(r && r.error === 'unknown_player' ? 'Codice non trovato: controlla di averlo scritto bene.' : 'Non riesco a collegarmi al conto.'); return; }
+          if (!restore && !r.created) { busy = false; go(); return; }   // codice già usato: ne genero un altro
+          var bal = Math.round(r.balance);
+          S = { v: 1, name: r.name || n, code: r.player || use, since: 0, srvTs: 0, lastGame: '', outbox: [], balance: bal, locked: bal <= LIMIT, history: [], bets: {} };
+          shown = null; save();
+          if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+          render(); syncNow(); runPendingLink();
+        })
+        .catch(function () { fail('Serve internet per il primo accesso. Riprova.'); });
     }
     name.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
     var emb = h('div'); emb.innerHTML = emblem();
@@ -1189,7 +1422,7 @@ var ICONS = {
       emb.firstChild,
       h('h1', {}, h('span', { class: 'hi', text: 'Benvenuti al' }), h('span', { class: 'lk', text: 'LUCK-IN' })),
       h('p', { class: 'sub' }, 'Il tuo conto parte con ', h('b', { text: fmt(START) }), '.'),
-      h('div', { class: 'card' }, h('div', { class: 'field' }, h('label', { class: 'lbl', text: 'Come ti chiami?' }), name), err),
+      h('div', { class: 'card' }, h('div', { class: 'field' }, h('label', { class: 'lbl', text: 'Come ti chiami?' }), name), h('div', { class: 'field' }, h('label', { class: 'lbl', text: 'Hai già un conto?' }), code), err),
       btn('Inizia a giocare', 'btn-gold btn-lg', go, 'chip'));
   }
 
@@ -1288,7 +1521,7 @@ var ICONS = {
   function render() {
     var app = $('#app'), y = window.scrollY;
     app.replaceChildren();
-    if (!S) { app.append(welcome()); return; }
+    if (!S || !S.code) { app.append(welcome()); return; }
     var lock = S.locked;
     var pct = Math.max(0, Math.min(1, (S.balance - LIMIT) / (START - LIMIT)));
     var meterCls = pct > 0.5 ? '' : pct > 0.25 ? 'mid' : 'low';
@@ -1307,7 +1540,7 @@ var ICONS = {
       corner('tl'), corner('tr'), corner('bl'), corner('br'),
       h('div', { class: 'hero-row' },
         h('div', { class: 'avatar' }, h('b', { text: S.name.trim().charAt(0) || '?' })),
-        h('div', { class: 'who' }, h('small', { text: 'Giocatore' }), h('span', { id: 'player', text: S.name })),
+        h('div', { class: 'who' }, h('small', { text: statusLine() }), h('span', { id: 'player', text: S.name })),
         h('button', { id: 'btn-menu', class: 'icon-btn', type: 'button', 'aria-label': 'Opzioni', onclick: menuSheet }, ico('dots'))),
       balEl,
       lock
@@ -1327,6 +1560,10 @@ var ICONS = {
     add(app, [
       h('header', { class: 'top' }, hero),
       h('main', { class: 'content' },
+        h('div', { class: 'menu gamerows' },
+          menuRow('scan', 'Collegati a un gioco', 'Inquadra il QR sullo schermo del gioco', gameScanSheet),
+          S.lastGame && GAME_NAMES[S.lastGame] && (S.lastGame === 'PARTY' || S.lastGame === 'CERCHI')
+            ? menuRow('roulette', 'Punta alla roulette', GAME_NAMES[S.lastGame], function () { rouletteSheet(S.lastGame); }) : null),
         inProgress.length ? h('div', {}, sectionTitle('Scommesse in corso', 'diamond'), inProgress.map(betTicket)) : null,
         sectionTitle('Storico', 'spade'),
         historyView(),
@@ -1341,7 +1578,14 @@ var ICONS = {
   S = load();
   buildBackground();
   $('#file-import').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) importData(f); });
+  pendingLink = parseGameLink(location.hash);
+  if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ok */ } }
   render();
+  runPendingLink();
+  setInterval(syncNow, SYNC_MS);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) syncNow(); });
+  window.addEventListener('online', syncNow);
+  syncNow();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   }

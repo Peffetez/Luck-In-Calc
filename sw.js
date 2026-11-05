@@ -1,6 +1,6 @@
 /* Service worker: tutto in cache, funziona senza internet.
    Strategia: risponde subito dalla cache e, se c'è rete, aggiorna la cache in background. */
-const CACHE = 'casino-night-v2';
+const CACHE = 'casino-night-v4';
 const FILES = [
   './',
   './index.html',
