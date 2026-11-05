@@ -31,7 +31,7 @@
   --r-s:12px; --r-m:16px; --r-l:22px;
   --tap:3rem;            /* 48 px: bersaglio minimo comodo */
   --dock-h:11.5rem;
-  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font:PaoloDollari,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Georgia,serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -346,7 +346,20 @@ input[type=range]::-moz-range-thumb{width:2.25rem;height:2.25rem;border-radius:5
 .colbtn.sel{opacity:1;border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
 .gamerows{margin:.75rem 0 0}
 .okmsg{color:var(--gold);text-align:center;font-weight:700;min-height:1.25rem}
+.colbtn.nero{box-shadow:inset 0 0 0 2px #f9e498;color:#f9e498}
+.hcard{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;background:rgba(255,255,255,.06);border:2px solid var(--line-gold);border-radius:var(--r-m);padding:.55rem .7rem;color:var(--ivory);margin-bottom:.4rem;cursor:pointer}
+.hcard[aria-pressed=true]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset;background:rgba(232,195,90,.12)}
+.hdot{flex:none;width:2.1rem;height:2.1rem;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,.3)}
+.hmid{flex:1;min-width:0;display:block}.hmid b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hmid small{opacity:.8;display:block}
+.hq{flex:none;font-weight:800;color:var(--gold);white-space:nowrap;text-align:right;font-size:.92rem}.hq .muted{font-weight:600;font-size:.8rem}
+.bar{height:.35rem;background:rgba(255,255,255,.15);border-radius:99px;margin-top:.3rem;overflow:hidden}.bar i{display:block;height:100%;background:var(--gold);transition:width .8s linear}
+.spark{flex:none;line-height:0}
+.pos-pos{color:var(--green-soft)}.pos-neg{color:var(--red-soft)}
+.pcard{background:rgba(255,255,255,.06);border:1px solid var(--line-gold);border-radius:var(--r-m);padding:.6rem .7rem;margin-bottom:.45rem}
+.pcard .row{display:flex;justify-content:space-between;gap:.5rem;align-items:center}
+.sec{font-weight:800;margin:.9rem 0 .4rem;color:var(--gold)}
 </style>
+<style>@font-face{font-family:'PaoloDollari';src:url(data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMnHYkJ0AAAEoAAAAYGNtYXAADCy2AAABkAAAADRnbHlmyp9EkQAAAcwAAABqaGVhZC/al4gAAACsAAAANmhoZWEF8gHFAAAA5AAAACRobXR4BNgAvgAAAYgAAAAIbG9jYQA1ABQAAAHEAAAABm1heHAABgAWAAABCAAAACBuYW1lrUQFIwAAAjgAAABvcG9zdGUGAnAAAAKoAAAAKQABAAAAAQAAkj1UbV8PPPUAAwPoAAAAAOcSqfYAAAAA5xKp9gBa/2oCRANSAAAAAwACAAAAAAAAAAEAAANS/wYAAAKAAFoAPAJEAAEAAAAAAAAAAAAAAAAAAAACAAEAAAACABQAAwAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAwJsAZAABQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAPz8/PwAALGMsYwNS/wYAAAOEASwAAAAAAAAAAAAAAAAAAAAgAAACWABkAoAAWgAAAAIAAAADAAAAFAADAAEAAAAUAAQAIAAAAAQABAABAAAsY///AAAsY///054AAQAAAAAAAAAUADUAAAACAGQAAAH0ArwAAwAHAAAzESERJSERIWQBkP6sARj+6AK8/UQ8AkQAAwBa/2oCRANSAAgADwATAAAzETMyFRQjIxERMzI1NCMjExEzEVrw+vqCgoyMgnMyAry0tP6sAbhQUP0SA+j8GAAAAAAAAAQANgABAAAAAAABAAwAAAABAAAAAAACAAcADAADAAEECQABABgAEwADAAEECQACAA4AK1Bhb2xvRG9sbGFyaVJlZ3VsYXIAUABhAG8AbABvAEQAbwBsAGwAYQByAGkAUgBlAGcAdQBsAGEAcgAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAABAgJwZAAAAA==) format('truetype');unicode-range:U+2C63;font-display:block}</style>
 </head>
 <body>
 <div class="bg-deco" id="bg" aria-hidden="true"></div>
@@ -410,9 +423,9 @@ var ICONS = {
 'use strict';
 (function () {
   var KEY = 'casino-night-v1';
-  var START = 150000, LIMIT = -150000;
-  var SERVER_URL = 'https://script.google.com/macros/s/AKfycby3qwIatevYUqu_JqoLYRc_DuHj5HN119wpraVkc4del6r-rZeGS2WoE4dYuFQ5Q6A/exec';   // l'indirizzo che finisce con /exec
-  var SERVER_KEY = 'PaoloLuckIn';
+  var START = 250000, LIMIT = -150000;
+  var SERVER_URL = 'INCOLLA_QUI_URL_APPS_SCRIPT';   // l'indirizzo che finisce con /exec
+  var SERVER_KEY = 'INCOLLA_QUI_PLAYER_KEY';
   var SYNC_MS = 6000;
   var REASONS = ['Mercato Azionario', 'Corsa dei cavalli', 'Flip7', 'Perudo', 'Roulette', 'Scommessa Privata', 'Bingo'];
   var REASON_ICON = { 'Mercato Azionario': 'market', 'Corsa dei cavalli': 'horseshoe', 'Flip7': 'card7', 'Perudo': 'dice', 'Roulette': 'roulette', 'Scommessa Privata': 'versus', 'Bingo': 'bingo' };
@@ -455,7 +468,7 @@ var ICONS = {
   }
   function group3(n) { return String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
   function fmtNum(n) { return (n < 0 ? '-' : '') + group3(n); }
-  function fmt(n) { return fmtNum(n) + ' €'; }
+  function fmt(n) { return fmtNum(n) + ' Ᵽ'; }
   function fmtSigned(n) { return (n > 0 ? '+' : '') + fmt(n); }
   function fmtMult(m) { return String(m).replace('.', ','); }
   function timeStr(ts) { return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }); }
@@ -747,7 +760,7 @@ var ICONS = {
   function keypad(onChange) {
     var digits = '';
     var num = h('span', { class: 'num', text: '0' });
-    var disp = h('div', { class: 'amount empty', role: 'status', 'aria-live': 'polite' }, num, ' ', h('span', { class: 'cur', text: '€' }));
+    var disp = h('div', { class: 'amount empty', role: 'status', 'aria-live': 'polite' }, num, ' ', h('span', { class: 'cur', text: 'Ᵽ' }));
     var api = { disp: disp };
     api.val = function () { return digits ? parseInt(digits, 10) : null; };
     api.set = function (n) { digits = n ? String(n) : ''; upd(); };
@@ -950,9 +963,9 @@ var ICONS = {
       btn('Rifiuta', 'btn-plain', closeSheet));
   }
 
-  /* ---------- collegamento ai giochi con QR + puntata alle roulette ---------- */
+  /* ---------- collegamento ai giochi con QR: pagina dedicata a ogni gioco ---------- */
   var GAME_NAMES = { PARTY: 'Roulette Party', CERCHI: 'Roulette a cerchi', CORSA: 'Corsa dei cavalli', NEXUS: 'Mercato Azionario' };
-  var COLOR_HEX = { BLU: '#2f6fe0', VERDE: '#1f9d55', ROSSO: '#d1303a', VIOLA: '#8a3fd1', ARANCIONE: '#e8751a', ORO: '#c99a00', GIALLO: '#d4b400' };
+  var COLOR_HEX = { BLU: '#2f6fe0', VERDE: '#1f9d55', ROSSO: '#d1303a', VIOLA: '#8a3fd1', ARANCIONE: '#e8751a', ORO: '#c99a00', GIALLO: '#d4b400', NERO: '#141414' };
   var MAXBET = 50000, pendingLink = null;
   function parseGameLink(text) {
     var m = /[#?&]lk=([A-Za-z]+)\.([A-Za-z0-9]{4,12})/.exec(String(text || ''));
@@ -978,52 +991,137 @@ var ICONS = {
           return;
         }
         buzz(25);
-        if (game === 'PARTY' || game === 'CERCHI') rouletteSheet(game);
-        else resultSheet('Collegato!', { tone: 'pos', icon: 'check', text: ['Sei collegato a ' + GAME_NAMES[game] + '.', 'Torna allo schermo del gioco: compari nell’elenco.'] });
+        gamePage(game, session);
       })
       .catch(function () { resultSheet('Nessuna connessione', { tone: 'neg', text: ['Serve internet per collegarsi a un gioco.'] }); });
   }
   function gameScanSheet() { scanSheet({ game: true }); }
 
-  function betError(e) {
-    var m = { closed: 'Le puntate sono chiuse.', no_round: 'Nessun giro aperto.', insufficient: 'Saldo insufficiente: supereresti il limite di perdita.',
-      over_limit: 'Puntata troppo alta: massimo ' + fmt(MAXBET) + '.', bad_colour: 'Colore non valido.', bad_amount: 'Importo non valido.', unknown_player: 'Conto non trovato.' };
-    return m[e] || 'Puntata non riuscita. Riprova.';
+  /* Pagina del gioco: finché e' aperta sei collegato (la app lo ribadisce ogni 20 secondi); con la X ti scolleghi. */
+  function openGameSheet(game, session, title) {
+    var sh = openSheet(title || GAME_NAMES[game]);
+    var stopped = false, extra = null;
+    function beat() { if (!stopped) srv({ action: 'link', player: S.code, game: game, session: session }).catch(function () { /* riprova al prossimo */ }); }
+    var hb = setInterval(beat, 20000);
+    function vis() { if (document.visibilityState === 'visible') beat(); }
+    document.addEventListener('visibilitychange', vis);
+    sh.onClose = function (fn) { extra = fn; };
+    overlayCleanup = function () {
+      stopped = true; clearInterval(hb); document.removeEventListener('visibilitychange', vis);
+      if (extra) extra();
+      srv({ action: 'unlink', player: S.code, game: game, session: session }).catch(function () { /* scade da solo */ });
+    };
+    return sh;
   }
-  function rouletteSheet(game) {
-    S.lastGame = game; save();
-    var sh = openSheet(GAME_NAMES[game]);
-    var timer = null, stopped = false, st = null, colour = null, attemptId = null, busy = false, seeded = false, lastSeen = null;
-    var statusEl = h('div', { class: 'bet-card' });
-    var mineEl = h('p', { class: 'muted center' }), resEl = h('p', { class: 'center' });
-    var okEl = h('div', { class: 'okmsg', role: 'status' }), err = h('div', { class: 'err', role: 'alert' });
-    var grid = h('div', { class: 'colgrid' });
-    var amt = numInput({ max: MAXBET, label: 'Importo in euro', onInput: function () { attemptId = null; upd(); } });
+  function gamePage(game, session) {
+    if (game === 'PARTY' || game === 'CERCHI') rouletteSheet(game, session);
+    else if (game === 'CORSA') horseSheet(session);
+    else marketSheet(session);
+  }
+
+  /* Invia un comando al gioco (puntare, investire, incassare) e aspetta la risposta. */
+  function gameCmd(session, game, type, payload) {
+    var id = uid();
+    return srv({ action: 'cmd', player: S.code, game: game, session: session, type: type, payload: payload, id: id })
+      .then(function (r) {
+        if (!r || !r.ok) return { ok: false, error: (r && r.error) || 'network' };
+        return new Promise(function (resolve) {
+          var t0 = Date.now();
+          (function poll() {
+            srv({ action: 'cmd_result', id: id }).then(function (x) {
+              if (x && x.ok && x.state !== 'NUOVO') return resolve(x.result || { ok: x.state === 'FATTO' });
+              if (Date.now() - t0 > 20000) return resolve({ ok: false, error: 'timeout' });
+              setTimeout(poll, 700);
+            }).catch(function () { if (Date.now() - t0 > 20000) resolve({ ok: false, error: 'network' }); else setTimeout(poll, 1000); });
+          })();
+        });
+      })
+      .catch(function () { return { ok: false, error: 'network' }; });
+  }
+  function cmdError(e, r) {
+    var m = {
+      phase: 'Le puntate sono chiuse: aspetta la prossima corsa.', not_in_lobby: 'Non sei ancora nella lobby: riprova tra un attimo.',
+      insufficient: 'Saldo insufficiente: supereresti il limite di perdita.', over_limit: 'Importo troppo alto: massimo ' + fmtNum(MAXBET) + '.',
+      timeout: 'Il gioco non risponde: controlla che lo schermo sia acceso e online.', network: 'Nessuna connessione.',
+      closed: 'Il mercato e’ in pausa: aspetta la riapertura.', locked: 'Posizione ancora bloccata' + (r && r.left ? ' per ' + mmss(r.left) : '') + '.',
+      not_found: 'Posizione non trovata.', not_active: 'Posizione gia’ chiusa.', bad_asset: 'Titolo non valido.', bad_horse: 'Cavallo non valido.',
+      bad_amount: 'Importo non valido.', code: 'Conto non collegato al gioco.', unknown_player: 'Conto non trovato.'
+    };
+    return m[e] || 'Operazione non riuscita. Riprova.';
+  }
+  function mmss(t) { t = Math.max(0, Math.round(t)); return Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2); }
+  function applyBalance(b) {
+    if (typeof b === 'number') { S.balance = Math.round(b) + pendingSum(); checkLock(); save(); render(); }
+  }
+  /* Interroga lo stato del gioco ogni 1,5 secondi finche' la pagina e' aperta. */
+  function pollState(session, onData) {
+    var stopped = false, timer = null;
+    function go() {
+      if (stopped) return;
+      srv({ action: 'state_get', session: session })
+        .then(function (r) { if (!stopped) onData(r && r.ok ? r : null); })
+        .catch(function () { if (!stopped) onData(null, true); })
+        .then(function () { if (!stopped) timer = setTimeout(go, 1500); });
+    }
+    go();
+    return function () { stopped = true; clearTimeout(timer); };
+  }
+  function amountBox(onChange) {
+    var amt = numInput({ max: MAXBET, label: 'Importo', onInput: onChange });
     amt.value = '1000';
     var chips = h('div', { class: 'chips' }, [1000, 5000, 10000, 25000, 50000].map(function (v) {
-      return h('button', { class: 'chip', type: 'button', text: fmtNum(v), onclick: function () { amt.value = String(v); attemptId = null; upd(); } });
+      return h('button', { class: 'chip', type: 'button', text: fmtNum(v), onclick: function () { amt.value = String(v); onChange(); } });
     }));
-    var go = btn('Punta', 'btn-gold btn-lg', place, 'chip');
-    overlayCleanup = function () { stopped = true; clearTimeout(timer); };
+    function mark() {
+      var a = amt.val();
+      [].forEach.call(chips.children, function (c) { c.setAttribute('aria-pressed', String(a === parseInt(c.textContent.replace(/\D/g, ''), 10))); });
+    }
+    return { input: amt, chips: chips, mark: mark };
+  }
+  function spark(hist, color) {
+    var w = 90, hh = 28, el = h('span', { class: 'spark' });
+    if (!hist || hist.length < 2) return el;
+    var mn = Math.min.apply(null, hist), mx = Math.max.apply(null, hist), rg = (mx - mn) || 1;
+    var pts = hist.map(function (v, i) { return (i * w / (hist.length - 1)).toFixed(1) + ',' + (hh - 2 - (v - mn) / rg * (hh - 4)).toFixed(1); }).join(' ');
+    el.innerHTML = '<svg width="' + w + '" height="' + hh + '" viewBox="0 0 ' + w + ' ' + hh + '"><polyline fill="none" stroke="' + color + '" stroke-width="2" points="' + pts + '"/></svg>';
+    return el;
+  }
 
+  /* ----- ROULETTE: puntate sempre aperte ----- */
+  function betError(e) {
+    var m = { insufficient: 'Saldo insufficiente: supereresti il limite di perdita.', over_limit: 'Puntata troppo alta: massimo ' + fmtNum(MAXBET) + '.',
+      bad_colour: 'Colore non valido.', bad_amount: 'Importo non valido.', unknown_player: 'Conto non trovato.' };
+    return m[e] || 'Puntata non riuscita. Riprova.';
+  }
+  function rouletteSheet(game, session) {
+    var sh = openGameSheet(game, session);
+    var timer = null, stopped = false, st = null, colour = null, attemptId = null, busy = false, seeded = false, lastSeen = null;
+    var statusEl = h('div', { class: 'bet-card' });
+    var mineEl = h('p', { class: 'muted center' }), playEl = h('p', { class: 'muted center' }), resEl = h('p', { class: 'center' });
+    var okEl = h('div', { class: 'okmsg', role: 'status' }), err = h('div', { class: 'err', role: 'alert' });
+    var grid = h('div', { class: 'colgrid' });
+    var ab = amountBox(function () { attemptId = null; upd(); });
+    var go = btn('Punta', 'btn-gold btn-lg', place, 'chip');
+    sh.onClose(function () { stopped = true; clearTimeout(timer); });
+
+    function list(a) { return a.map(function (b) { return b.colore + ' ' + fmt(b.importo); }).join(' · '); }
     function describe(L) {
       if (L.annullato) return 'Giro ' + L.round + ' annullato' + (L.mie ? ': puntate rimborsate.' : '.');
-      var t = 'Giro ' + L.round + ': uscito ' + L.colore + (L.mult ? ' x' + L.mult : '') + '.';
+      var t = 'Giro ' + L.round + ': uscito ' + (L.colore === 'NERO' ? 'NERO (x2)' : L.colore) + (L.mult ? ' x' + L.mult : '') + '.';
       if (L.mie) t += L.vincita > 0 ? ' Hai vinto ' + fmt(L.vincita) + '!' : ' Questa volta niente.';
       return t;
     }
     function upd() {
-      var a = amt.val();
-      [].forEach.call(chips.children, function (c) { c.setAttribute('aria-pressed', String(a === parseInt(c.textContent.replace(/\D/g, ''), 10))); });
+      var a = ab.input.val(); ab.mark();
       [].forEach.call(grid.children, function (c) { c.classList.toggle('sel', c.getAttribute('data-c') === colour); });
-      go.disabled = !(st && st.open && colour && a && !S.locked && !busy);
+      go.disabled = !(st && colour && a && !S.locked && !busy);
     }
     function paint() {
-      statusEl.className = 'bet-card';
       fill(statusEl,
-        h('div', { class: 't', text: st.open ? 'Puntate APERTE' : st.round ? 'Puntate chiuse · la roulette gira' : 'In attesa del banco' }),
+        h('div', { class: 't', text: st.spinning ? 'La roulette sta girando…' : 'Puntate APERTE: punta quando vuoi' }),
         h('div', { class: 'muted', text: 'Saldo: ' + fmt(S.balance) }));
-      mineEl.textContent = st.mine.length ? 'Le tue puntate: ' + st.mine.map(function (b) { return b.colore + ' ' + fmt(b.importo); }).join(' · ') : '';
+      mineEl.textContent = st.mine.length ? 'Per il prossimo giro: ' + list(st.mine) : '';
+      playEl.textContent = st.inPlay.length ? 'In gioco adesso: ' + list(st.inPlay) : '';
       var L = st.last;
       resEl.textContent = L ? describe(L) : '';
       if (!seeded) { seeded = true; lastSeen = L ? L.round : null; }
@@ -1033,7 +1131,7 @@ var ICONS = {
       }
       if (!grid.children.length && st.colori) {
         st.colori.forEach(function (c) {
-          grid.append(h('button', { class: 'colbtn', type: 'button', 'data-c': c.id, style: 'background:' + (COLOR_HEX[c.id] || '#555'),
+          grid.append(h('button', { class: 'colbtn' + (c.id === 'NERO' ? ' nero' : ''), type: 'button', 'data-c': c.id, style: 'background:' + (COLOR_HEX[c.id] || '#555'),
             onclick: function () { colour = c.id; attemptId = null; upd(); buzz(6); } },
             h('span', { text: c.nome }), h('small', { text: c.pagamento === 'variabile' ? 'pagamento variabile' : c.pagamento })));
         });
@@ -1045,22 +1143,21 @@ var ICONS = {
       srv({ action: 'game_status', game: game, player: S.code })
         .then(function (r) {
           if (stopped) return;
-          if (r && r.ok) { st = r; paint(); } else err.textContent = 'Registro non raggiungibile.';
+          if (r && r.ok) { st = r; err.textContent = ''; paint(); } else err.textContent = 'Registro non raggiungibile.';
         })
         .catch(function () { if (!stopped && !st) err.textContent = 'Nessuna connessione…'; })
         .then(function () { if (!stopped) timer = setTimeout(refresh, 2500); });
     }
     function place() {
-      var a = amt.val();
-      if (!st || !st.open || !colour || !a || busy) return;
+      var a = ab.input.val();
+      if (!st || !colour || !a || busy) return;
       if (!attemptId) attemptId = uid();
       busy = true; err.textContent = ''; okEl.textContent = ''; upd();
-      srv({ action: 'bet', game: game, round: st.round, player: S.code, colour: colour, amount: a, id: attemptId })
+      srv({ action: 'bet', game: game, player: S.code, colour: colour, amount: a, id: attemptId })
         .then(function (r) {
           busy = false;
           if (r && r.ok) {
-            attemptId = null; buzz(20);
-            S.balance = Math.round(r.balance) + pendingSum(); checkLock(); save(); render();
+            attemptId = null; buzz(20); applyBalance(r.balance);
             okEl.textContent = 'Puntata registrata: ' + colour + ' ' + fmt(a);
             clearTimeout(timer); refresh();
           } else { attemptId = null; err.textContent = betError(r && r.error); }
@@ -1070,12 +1167,165 @@ var ICONS = {
     }
     add(sh.body,
       S.locked ? h('p', { class: 'center err', text: 'Conto bloccato: non puoi puntare.' }) : null,
-      statusEl, mineEl, resEl, grid,
-      h('div', { class: 'field' }, h('label', { text: 'Quanto punti (€) · massimo ' + fmtNum(MAXBET) }), amt),
-      chips, okEl, err);
+      statusEl, mineEl, playEl, resEl, grid,
+      game === 'CERCHI' ? h('p', { class: 'muted center', text: 'NERO: quando esce raddoppia il moltiplicatore e paga chi ha puntato sul nero.' }) : null,
+      h('div', { class: 'field' }, h('label', { text: 'Quanto punti · massimo ' + fmtNum(MAXBET) }), ab.input),
+      ab.chips, okEl, err);
     add(sh.foot, go);
-    statusEl.append(h('div', { class: 'muted', text: 'Collegamento…' }));
+    fill(statusEl, h('div', { class: 'muted', text: 'Collegamento…' }));
     refresh();
+    upd();
+  }
+
+  /* ----- CORSA DEI CAVALLI ----- */
+  function horseSheet(session) {
+    var sh = openGameSheet('CORSA', session);
+    var d = null, sel = null, busy = false, lastRace = null, notified = null, attempt = 0;
+    var statusEl = h('div', { class: 'bet-card' }), warn = h('p', { class: 'err center' });
+    var mineEl = h('p', { class: 'center' }), listEl = h('div'), resEl = h('div');
+    var okEl = h('div', { class: 'okmsg', role: 'status' }), err = h('div', { class: 'err', role: 'alert' });
+    var ab = amountBox(function () { upd(); });
+    var go = btn('Punta sul cavallo', 'btn-gold btn-lg', place, 'chip');
+    sh.onClose(pollState(session, function (r, failed) {
+      if (failed || !r) { warn.textContent = 'Nessuna connessione…'; return; }
+      if (!r.data) { warn.textContent = 'In attesa che il gioco si colleghi…'; return; }
+      d = r.data; warn.textContent = r.age > 15000 ? 'Il gioco non risponde da ' + Math.round(r.age / 1000) + ' secondi: controlla lo schermo.' : '';
+      paint();
+    }));
+    function me() { return d && d.players.filter(function (p) { return p.code === S.code; })[0]; }
+    function horse(id) { return d && d.horses.filter(function (x) { return x.id === id; })[0]; }
+    function upd() {
+      var a = ab.input.val(); ab.mark();
+      go.disabled = !(d && d.phase === 'BETTING' && me() && sel && a && !S.locked && !busy);
+      go.querySelector('span:last-child') && (go.querySelector('span:last-child').textContent = sel && horse(sel) ? 'Punta su #' + horse(sel).lane + ' ' + horse(sel).name : 'Punta sul cavallo');
+    }
+    function paint() {
+      var ph = d.phase, m = me();
+      var title = ph === 'BETTING' ? 'Scommesse APERTE · ' + d.time + 's' : ph === 'RACING' ? 'Corsa in corso!' : ph === 'RESULTS' ? 'Corsa conclusa' : 'In attesa della prossima corsa';
+      fill(statusEl, h('div', { class: 't', text: 'Corsa #' + d.race + ' · ' + title }),
+        h('div', { class: 'muted', text: m ? 'Saldo: ' + fmt(S.balance) : 'Stai entrando nella lobby…' }));
+      mineEl.textContent = m && m.bet && horse(m.bet.horseId) ? 'La tua puntata: ' + fmt(m.bet.amount) + ' su #' + horse(m.bet.horseId).lane + ' ' + horse(m.bet.horseId).name : '';
+      var prevSel = sel;
+      fill(listEl, d.horses.length ? null : h('p', { class: 'muted center', text: 'I cavalli e le quote compaiono qui appena si aprono le scommesse.' }), d.horses.map(function (x) {
+        var place = d.first && d.first.id === x.id ? '1°' : d.second && d.second.id === x.id ? '2°' : '';
+        return h('button', { class: 'hcard', type: 'button', 'aria-pressed': String(sel === x.id), onclick: function () { sel = x.id; paint(); buzz(6); } },
+          h('span', { class: 'hdot', style: 'background:' + (x.color || '#555'), text: String(x.lane) }),
+          h('span', { class: 'hmid' }, h('b', { text: x.name + (place ? '  ' + place : '') }),
+            h('small', { text: (x.tier === 'FAVORITE' ? 'Favorito' : x.tier === 'UNDERDOG' ? 'Outsider' : 'Media') + (x.breed ? ' · ' + x.breed : '') }),
+            ph === 'RACING' || ph === 'RESULTS' ? h('div', { class: 'bar' }, h('i', { style: 'width:' + x.pos + '%' })) : null),
+          h('span', { class: 'hq' }, h('div', { text: '1° x' + x.odds.toFixed(2) }), h('div', { class: 'muted', text: '2° x' + x.odds2.toFixed(2) })));
+      }));
+      fill(resEl);
+      if (ph === 'RESULTS') {
+        var rs = (d.results || []).filter(function (r) { return r.code === S.code; })[0];
+        if (rs) {
+          var t = !rs.didBet ? 'Questa volta non hai puntato.' : (rs.place === 'FIRST' ? '1° POSTO! ' : rs.place === 'SECOND' ? '2° POSTO! ' : 'Persa. ') + (rs.delta >= 0 ? '+' : '') + fmt(rs.delta);
+          add(resEl, h('div', { class: 'bet-card' }, h('div', { class: 't', text: t }), h('div', { class: 'muted', text: rs.quote || '' })));
+          if (notified !== d.race) { notified = d.race; if (rs.didBet) { buzz([30, 40, 30]); syncNow(); } }
+        }
+      }
+      if (lastRace !== d.race) { lastRace = d.race; sel = null; okEl.textContent = ''; err.textContent = ''; paint(); return; }
+      upd();
+    }
+    function place() {
+      var a = ab.input.val();
+      if (!d || !sel || !a || busy) return;
+      busy = true; err.textContent = ''; okEl.textContent = 'Invio al gioco…'; upd();
+      gameCmd(session, 'CORSA', 'bet', { horseId: sel, amount: a }).then(function (r) {
+        busy = false;
+        if (r && r.ok) { buzz(20); applyBalance(r.balance); okEl.textContent = 'Puntata registrata: ' + fmt(a) + ' su #' + (horse(sel) ? horse(sel).lane : '?'); syncNow(); }
+        else { okEl.textContent = ''; err.textContent = cmdError(r && r.error, r); }
+        upd();
+      });
+    }
+    add(sh.body, S.locked ? h('p', { class: 'center err', text: 'Conto bloccato: non puoi puntare.' }) : null,
+      statusEl, warn, mineEl, resEl, h('div', { class: 'sec', text: 'Scegli il tuo cavallo' }), listEl,
+      h('div', { class: 'field' }, h('label', { text: 'Quanto punti · massimo ' + fmtNum(MAXBET) }), ab.input), ab.chips, okEl, err,
+      h('p', { class: 'muted center', text: 'Puoi cambiare cavallo o importo finché il tempo non scade.' }));
+    add(sh.foot, go);
+    fill(statusEl, h('div', { class: 'muted', text: 'Collegamento…' }));
+    upd();
+  }
+
+  /* ----- MERCATO AZIONARIO ----- */
+  function marketSheet(session) {
+    var sh = openGameSheet('NEXUS', session);
+    var d = null, sel = null, busy = false, firstPaint = true;
+    var statusEl = h('div', { class: 'bet-card' }), warn = h('p', { class: 'err center' });
+    var assetsEl = h('div'), posEl = h('div');
+    var okEl = h('div', { class: 'okmsg', role: 'status' }), err = h('div', { class: 'err', role: 'alert' });
+    var ab = amountBox(function () { upd(); });
+    var go = btn('Investi', 'btn-gold btn-lg', invest, 'chip');
+    sh.onClose(pollState(session, function (r, failed) {
+      if (failed || !r) { warn.textContent = 'Nessuna connessione…'; return; }
+      if (!r.data) { warn.textContent = 'In attesa che il gioco si colleghi…'; return; }
+      d = r.data; warn.textContent = r.age > 15000 ? 'Il gioco non risponde da ' + Math.round(r.age / 1000) + ' secondi: controlla lo schermo.' : '';
+      if (!sel || !d.assets.some(function (x) { return x.code === sel; })) sel = d.assets[0].code;
+      paint();
+    }));
+    function asset(code) { return d && d.assets.filter(function (x) { return x.code === code; })[0]; }
+    function upd() {
+      var a = ab.input.val(); ab.mark();
+      go.disabled = !(d && d.phase === 'OPEN' && sel && a && !S.locked && !busy);
+      var lab = go.querySelector('span:last-child');
+      if (lab) lab.textContent = sel && asset(sel) ? 'Investi in ' + asset(sel).label : 'Investi';
+    }
+    function pct(a) { return a.init ? (a.price / a.init - 1) * 100 : 0; }
+    function sgn(v) { return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; }
+    function paint() {
+      var open = d.phase === 'OPEN';
+      fill(statusEl, h('div', { class: 't', text: open ? 'MERCATO APERTO' : 'PAUSA: 0% commissioni, tutto sbloccato' }),
+        h('div', { class: 'muted', text: (open ? 'Pausa tra ' : 'Riapre tra ') + mmss(d.remaining) + ' · Ciclo ' + d.cycle + '/2 · Saldo ' + fmt(S.balance) }));
+      fill(assetsEl, d.assets.map(function (a) {
+        var p = pct(a);
+        return h('button', { class: 'hcard', type: 'button', 'aria-pressed': String(sel === a.code), onclick: function () { sel = a.code; paint(); buzz(6); } },
+          h('span', { class: 'hmid' }, h('b', { text: a.label }), h('small', { text: a.name })),
+          spark(a.hist, a.color || '#e8c35a'),
+          h('span', { class: 'hq' }, h('div', { text: 'Ᵽ' + a.price.toFixed(2) }), h('div', { class: p >= 0 ? 'pos-pos' : 'pos-neg', text: sgn(p) })));
+      }));
+      var mine = d.investors.filter(function (i) { return i.code === S.code; });
+      var act = mine.filter(function (i) { return i.status === 'ACTIVE'; }), cl = mine.filter(function (i) { return i.status !== 'ACTIVE'; }).slice(0, 5);
+      fill(posEl, h('div', { class: 'sec', text: 'Le mie posizioni' }),
+        act.length ? null : h('p', { class: 'muted', text: 'Nessuna posizione aperta.' }),
+        act.map(function (i) {
+          var a = asset(i.asset), locked = open && i.lock > 0, lv = i.live || { value: i.cur, pct: 0, fee: 0 };
+          return h('div', { class: 'pcard' },
+            h('div', { class: 'row' }, h('b', { text: a ? a.label : i.asset }), h('b', { class: lv.pct >= 0 ? 'pos-pos' : 'pos-neg', text: fmt(lv.value) + '  (' + sgn(lv.pct) + ')' })),
+            h('div', { class: 'row muted' }, h('span', { text: 'Investito ' + fmt(i.bet) }), h('span', { text: lv.fee ? 'Commissione ' + Math.round(lv.fee * 100) + '%' : '0% commissioni' })),
+            h('div', { style: 'margin-top:.4rem' }, btn(locked ? 'Bloccata ' + mmss(i.lock) : 'Incassa ' + fmt(lv.value), locked ? 'btn-ghost' : 'btn-gold', function () { cash(i); }, 'out')));
+        }),
+        cl.length ? h('div', { class: 'sec', text: 'Chiuse di recente' }) : null,
+        cl.map(function (i) {
+          var a = asset(i.asset);
+          return h('div', { class: 'pcard' }, h('div', { class: 'row' }, h('b', { text: a ? a.label : i.asset }),
+            h('span', { class: (i.finalPct || 0) >= 0 ? 'pos-pos' : 'pos-neg', text: i.final == null ? '-' : fmt(i.final) + '  (' + sgn(i.finalPct || 0) + ')' })));
+        }));
+      if (firstPaint) { firstPaint = false; }
+      upd();
+    }
+    function invest() {
+      var a = ab.input.val();
+      if (!d || !sel || !a || busy) return;
+      busy = true; err.textContent = ''; okEl.textContent = 'Invio al gioco…'; upd();
+      gameCmd(session, 'NEXUS', 'invest', { asset: sel, amount: a }).then(function (r) {
+        busy = false;
+        if (r && r.ok) { buzz(20); applyBalance(r.balance); okEl.textContent = 'Investiti ' + fmt(a) + ' in ' + (asset(sel) ? asset(sel).label : sel); syncNow(); }
+        else { okEl.textContent = ''; err.textContent = cmdError(r && r.error, r); }
+        upd();
+      });
+    }
+    function cash(i) {
+      err.textContent = ''; okEl.textContent = 'Invio al gioco…';
+      gameCmd(session, 'NEXUS', 'cashout', { id: i.id }).then(function (r) {
+        if (r && r.ok) { buzz([20, 30, 20]); okEl.textContent = 'Incassati ' + fmt(r.payout) + ' (' + sgn(r.pct || 0) + ')'; syncNow(); }
+        else { okEl.textContent = ''; err.textContent = cmdError(r && r.error, r); }
+      });
+    }
+    add(sh.body, S.locked ? h('p', { class: 'center err', text: 'Conto bloccato: non puoi investire.' }) : null,
+      statusEl, warn, h('div', { class: 'sec', text: 'Scegli il titolo' }), assetsEl,
+      h('div', { class: 'field' }, h('label', { text: 'Quanto investi · massimo ' + fmtNum(MAXBET) }), ab.input), ab.chips, okEl, err, posEl);
+    add(sh.foot, go);
+    fill(statusEl, h('div', { class: 'muted', text: 'Collegamento…' }));
     upd();
   }
 
@@ -1176,7 +1426,7 @@ var ICONS = {
     add(sh.body,
       h('div', { class: 'field' }, h('label', { text: 'Su cosa si scommette' }), desc),
       h('div', { class: 'field' }, h('label', { text: 'Avversario' }), opp),
-      h('div', { class: 'field' }, h('label', { text: 'Rapporto A:B · 1 unità = 1.000 €' }),
+      h('div', { class: 'field' }, h('label', { text: 'Rapporto A:B · 1 unità = 1.000 Ᵽ' }),
         h('div', { class: 'ratio' },
           h('span', { class: 'who-lbl', text: 'Tu (A)' }), A,
           h('span', { class: 'who-lbl', text: 'Avversario (B)' }), B)),
@@ -1529,7 +1779,7 @@ var ICONS = {
       .filter(function (b) { return b.status !== 'closed'; }).sort(function (a, b) { return b.ts - a.ts; });
 
     var num = h('span', { class: 'num', text: fmtNum(S.balance) });
-    var balEl = h('div', { id: 'balance', class: 'balance' + (S.balance < 0 ? ' neg' : '') }, num, ' ', h('span', { class: 'cur', text: '€' }));
+    var balEl = h('div', { id: 'balance', class: 'balance' + (S.balance < 0 ? ' neg' : '') }, num, ' ', h('span', { class: 'cur', text: 'Ᵽ' }));
     if (!reduced && shown != null && shown !== S.balance) {
       balEl.classList.add(S.balance > shown ? 'flash-pos' : 'flash-neg');
       animateBalance(num, shown, S.balance);
@@ -1561,9 +1811,7 @@ var ICONS = {
       h('header', { class: 'top' }, hero),
       h('main', { class: 'content' },
         h('div', { class: 'menu gamerows' },
-          menuRow('scan', 'Collegati a un gioco', 'Inquadra il QR sullo schermo del gioco', gameScanSheet),
-          S.lastGame && GAME_NAMES[S.lastGame] && (S.lastGame === 'PARTY' || S.lastGame === 'CERCHI')
-            ? menuRow('roulette', 'Punta alla roulette', GAME_NAMES[S.lastGame], function () { rouletteSheet(S.lastGame); }) : null),
+          menuRow('scan', 'Collegati a un gioco', 'Inquadra il QR sullo schermo del gioco', gameScanSheet)),
         inProgress.length ? h('div', {}, sectionTitle('Scommesse in corso', 'diamond'), inProgress.map(betTicket)) : null,
         sectionTitle('Storico', 'spade'),
         historyView(),
